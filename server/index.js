@@ -24,7 +24,7 @@ app.use(express.static(join(__dirname, '..', 'public')));
 app.get('/api/channels', (_req, res) => {
   res.json({
     channels: CHANNELS,
-    mode: devin.isLive || github.isLive ? 'live' : 'demo',
+    mode: devin.isLive ? 'live' : 'demo',
     repo: github.repo,
   });
 });
@@ -129,8 +129,7 @@ app.post('/webhook/github', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  const mode = devin.isLive || github.isLive ? 'LIVE' : 'DEMO';
-  console.log(`hi-human listening on http://localhost:${PORT}  [${mode} mode]`);
-  if (mode === 'DEMO') console.log('   No credentials set — GitHub + Devin are simulated end-to-end.');
+  console.log(`hi-human listening on http://localhost:${PORT}`);
+  if (!devin.isLive) console.log('   ⚠️  DEVIN_API_KEY not set — Devin sessions will fail.');
   automation.startPoller();
 });

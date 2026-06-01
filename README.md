@@ -49,6 +49,25 @@ This is only practical with an *autonomous* coding agent: it has to read an unfa
 
 ## Run it
 
+### Configure `.env`
+
+Copy the template and fill in your values. `.env` is gitignored — never commit real keys.
+
+```bash
+cp .env.example .env
+```
+
+| Variable | When | What it does |
+|---|---|---|
+| `DEVIN_API_KEY` | required | v3 org-scoped service-user key (`cog_…`), from app.devin.ai → Settings → Service Users. |
+| `DEVIN_API_BASE` | optional | Devin API base; defaults to `https://api.devin.ai/v3`. |
+| `DEVIN_ORG_ID` | optional | Org for the v3 API; auto-resolved from `/v3/self` if left blank. |
+| `GITHUB_REPO` | required | `owner/repo` of your Superset fork — the prompt points Devin here. |
+| `GITHUB_BASE_BRANCH` | optional | Base branch Devin's PR targets (default `master`). |
+| `GITHUB_WEBHOOK_SECRET` | optional | Set to verify incoming GitHub webhook signatures. |
+| `PORT` | optional | HTTP port (default `3000`). |
+| `POLL_INTERVAL_MS` | optional | How often the poller advances active Devin sessions (default `8000`). |
+
 ### With Docker (recommended)
 
 ```bash
@@ -62,12 +81,6 @@ docker build -t hi-human .
 docker run --rm -p 3000:3000 --env-file .env -v "$PWD/data:/app/data" hi-human
 ```
 
-For a zero-credential walkthrough, override the mode at the command line — no `.env` needed:
-
-```bash
-docker run --rm -p 3000:3000 -e DEMO_MODE=true hi-human
-```
-
 ### With Node directly
 
 ```bash
@@ -77,19 +90,7 @@ npm start                           # → http://localhost:3000
 
 Then: open a channel on the right rail → type a requirement → **Submit as requirement →**. Watch the session, deploy URL, follow-up, feedback, and PR appear in the channel, then open the **Dashboard**.
 
-### Demo vs live mode
-
-| `DEMO_MODE` | Behaviour |
-|---|---|
-| `true` | Devin is **simulated end-to-end** on a realistic timeline (deploy ~12s after submit; PR ~6s after feedback; merge shortly after). Nothing external is called, no ACUs spent. |
-| `false` | Hits the **real Devin v3 API** (consumes ACUs). Devin builds, deploys, and opens the PR itself; PR status is read back from the Devin session. |
-
-Live mode needs, in `.env` (copy from `.env.example`):
-- `DEVIN_API_KEY` — a v3 org-scoped service-user key (`cog_…`). See https://docs.devin.ai/api-reference.
-- `DEVIN_ORG_ID` — optional; auto-resolved from `/v3/self` if blank.
-- `GITHUB_REPO` — owner/repo of your Superset fork (the prompt points Devin here).
-
-> This service does **not** call the GitHub REST API — issues aren't created and PR state comes from Devin. A `/webhook/github` receiver still exists as an optional external trigger: point a GitHub *Issues* webhook at it (tunnel locally with `smee.io`/`ngrok`); any issue opened with a `sales-member` / `operations-member` / `tech-member` label kicks off the same flow. Set `GITHUB_WEBHOOK_SECRET` to verify signatures.
+Every submitted requirement hits the **real Devin v3 API** (consumes ACUs): Devin builds, deploys, and opens the PR itself; PR status is read back from the Devin session. Set `DEVIN_API_KEY` and `GITHUB_REPO` first — see [Configure `.env`](#configure-env) above.
 
 ---
 
@@ -112,7 +113,7 @@ Every state transition is also narrated into the originating channel, so the cha
 Fork: https://github.com/kifune831-pixel/superset
 
 Create the issues you intend to remediate and label them by channel, e.g.:
-- `sales-member` — "Add CSV export button to dashboards"
+- `sales-member` — "Add a line at the bottom of the login page — 'Questions? sales@acme.com'."
 - `tech-member` — "Upgrade Flask dependency to patch CVE-XXXX"
 - `operations-member` — "Add a scheduled-report health check"
 

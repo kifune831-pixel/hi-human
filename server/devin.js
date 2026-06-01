@@ -10,16 +10,12 @@
 // and `pull_requests`. So we ask Devin (see buildPrompt) to keep a short progress
 // line in structured_output.summary, and the poller relays that + status changes
 // into the chat channel.
-//
-// In DEMO_MODE we return a deterministic, time-driven simulation so the whole
-// requirement -> deploy -> PR loop is observable without spending ACUs.
 
-const DEMO = process.env.DEMO_MODE !== 'false';
 const KEY = process.env.DEVIN_API_KEY;
 const BASE = process.env.DEVIN_API_BASE || 'https://api.devin.ai/v3';
 let ORG = process.env.DEVIN_ORG_ID || null;
 
-const live = !DEMO && !!KEY;
+const live = !!KEY;
 
 function headers() {
   return {
@@ -142,78 +138,17 @@ async function liveMessage(sessionId, message) {
   return { ok: true };
 }
 
-// ── Mock simulation ─────────────────────────────────────────────
-// Session lifecycle is purely a function of elapsed time since creation,
-// so polling produces a believable working -> finished progression, with a
-// changing `summary` so the chat relay has something to show.
-const mockSessions = new Map();
-
-function mockCreate(prompt, tags, title) {
-  const id = `devin-${Math.random().toString(36).slice(2, 10)}`;
-  mockSessions.set(id, { createdAt: Date.now(), feedbackAt: null, title });
-  return { session_id: id, url: `https://app.devin.ai/sessions/${id}`, is_new_session: true };
-}
-
-function mockGet(sessionId) {
-  const s = mockSessions.get(sessionId);
-  if (!s) return normalize({ session_id: sessionId, status: 'exit', pull_requests: [] });
-  const elapsed = Date.now() - s.createdAt;
-  const structured = {};
-  let status = 'running';
-  let status_detail = 'working';
-
-  // Evolving progress line for the chat relay.
-  if (elapsed < 4_000) structured.summary = 'Cloning the repo and implementing the change on a new branch…';
-  else if (elapsed < 8_000) structured.summary = 'Installing deps and running superset db upgrade / init…';
-  else if (elapsed < 12_000) structured.summary = 'Building the frontend and starting Superset on :8088…';
-  else structured.summary = `Deployed — ${s.title}. Try it and send refinements.`;
-
-  // ~12s in: environment is deployed and usable.
-  let pull_requests = [];
-  if (elapsed > 12_000) {
-    structured.deploy_url = `https://${sessionId}.preview.devin.dev`;
-    status_detail = 'waiting_for_user';
-  }
-  // PR only opens after feedback has been submitted (mirrors the prompt's step 4).
-  if (s.feedbackAt && Date.now() - s.feedbackAt > 6_000) {
-    const prUrl = `https://github.com/${process.env.GITHUB_REPO || 'kifune831-pixel/superset'}/pull/${
-      100 + (parseInt(sessionId.slice(-3), 36) % 800)
-    }`;
-    structured.summary = 'Opened the pull request with your feedback embedded.';
-    structured.pr_url = prUrl;
-    pull_requests = [{ pr_url: prUrl, pr_state: 'open' }];
-    status = 'exit';
-    status_detail = 'finished';
-  }
-
-  return normalize({
-    session_id: sessionId,
-    url: `https://app.devin.ai/sessions/${sessionId}`,
-    status,
-    status_detail,
-    structured_output: Object.keys(structured).length ? structured : null,
-    pull_requests,
-    acus_consumed: Math.round(elapsed / 1000),
-  });
-}
-
-function mockMessage(sessionId, message) {
-  const s = mockSessions.get(sessionId);
-  if (s && /^FEEDBACK:/i.test(message)) s.feedbackAt = Date.now();
-  return { ok: true };
-}
-
 // ── Public surface ──────────────────────────────────────────────
 export const isLive = live;
 
 export async function createSession({ prompt, tags, title }) {
-  return live ? liveCreate(prompt, tags, title) : mockCreate(prompt, tags, title);
+  return liveCreate(prompt, tags, title);
 }
 
 export async function getSession(sessionId) {
-  return live ? liveGet(sessionId) : mockGet(sessionId);
+  return liveGet(sessionId);
 }
 
 export async function sendMessage(sessionId, message) {
-  return live ? liveMessage(sessionId, message) : mockMessage(sessionId, message);
+  return liveMessage(sessionId, message);
 }

@@ -129,6 +129,14 @@ function renderReqs() {
   if (!box) return;
   const mine = state.reqs.filter((r) => r.channel === state.view);
   if (!mine.length) { box.innerHTML = ''; return; }
+
+  // The poller rebuilds this subtree every few seconds. Without this, an input
+  // being typed into (follow-up / feedback comment) loses focus and its text.
+  const active = document.activeElement;
+  const saved = active && box.contains(active) && active.id
+    ? { id: active.id, value: active.value, start: active.selectionStart, end: active.selectionEnd }
+    : null;
+
   box.innerHTML =
     `<div class="reqs-title">Requirements in #${state.view}</div>` +
     mine
@@ -137,6 +145,15 @@ function renderReqs() {
       .map((r) => reqCard(r))
       .join('');
   mine.forEach((r) => wireReqCard(r));
+
+  if (saved) {
+    const el = document.getElementById(saved.id);
+    if (el) {
+      el.value = saved.value;
+      el.focus();
+      try { el.setSelectionRange(saved.start, saved.end); } catch {}
+    }
+  }
 }
 
 function reqCard(r) {

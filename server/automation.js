@@ -16,7 +16,6 @@ import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import * as store from './store.js';
 import * as devin from './devin.js';
-import * as github from './github.js';
 
 export const bus = new EventEmitter();
 const POLL = Number(process.env.POLL_INTERVAL_MS || 8000);
@@ -179,11 +178,9 @@ async function pollOnce() {
       }
 
       // Refresh PR state for the dashboard from Devin's own view of the PR
-      // (we never call the GitHub API). Demo mode falls back to the mock.
+      // (we never call the GitHub API).
       if (req.prUrl || prUrl) {
-        const prState = devin.isLive
-          ? s.pull_request?.state || 'open'
-          : (await github.getPrStatus(req.prUrl || prUrl))?.state;
+        const prState = s.pull_request?.state || 'open';
         if (prState) {
           const wasMerged = req.prState === 'merged';
           store.updateRequirement(req.id, { prState });
