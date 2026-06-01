@@ -1,0 +1,52 @@
+[
+  {
+    "id": "ba47c733-4421-4ef5-8626-f0297cad9e79",
+    "channel": "sales",
+    "title": "Add a line at the bottom of the login page — 'Questions? sales@acme.com' — so prospects can reach us while they're trialing.",
+    "body": "",
+    "author": "sales",
+    "status": "pr_open",
+    "createdAt": 1780326324739,
+    "updatedAt": 1780327435853,
+    "issueNumber": null,
+    "issueUrl": null,
+    "sessionId": "7c41107554a34e26968bbc500eb26450",
+    "sessionUrl": "https://app.devin.ai/sessions/7c41107554a34e26968bbc500eb26450",
+    "deployUrl": "https://alto-battle-yrs-authentic.trycloudflare.com",
+    "deployedAt": 1780326770715,
+    "prUrl": "https://github.com/kifune831-pixel/superset/pull/2",
+    "prState": "open",
+    "score": 5,
+    "feedbackComment": "",
+    "feedbackAt": 1780326960296,
+    "doneAt": null,
+    "lastSummary": "PR created with sales feedback. Deployed and waiting for user to approve testing.",
+    "lastStatusDetail": "waiting_for_user",
+    "events": [
+      {
+        "ts": 1780326324739,
+        "text": "Requirement filed in #sales"
+      },
+      {
+        "ts": 1780326325582,
+        "text": "Started Devin session 7c41107554a34e26968bbc500eb26450"
+      },
+      {
+        "ts": 1780326770716,
+        "text": "Environment deployed"
+      },
+      {
+        "ts": 1780326824337,
+        "text": "Sent follow-up to Devin"
+      },
+      {
+        "ts": 1780326960939,
+        "text": "Feedback 5/5 submitted; PR requested"
+      },
+      {
+        "ts": 1780326986747,
+        "text": "PR opened: https://github.com/kifune831-pixel/superset/pull/2"
+      }
+    ]
+  }
+]

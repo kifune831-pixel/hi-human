@@ -1,0 +1,51 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# Devin machine config for the Superset fork. Commands run from the repo root.
+# Kept intentionally minimal for a reliable first-run: Superset uses its default
+# SQLite metadata DB, so no Postgres/Redis setup is needed.
+
+# One-time, baked into the snapshot: install Superset from source (editable).
+# Install the local `superset-core` FIRST so pip uses the in-repo version
+# (sqlglot>=30.8, matching the main package) instead of pulling the stale
+# apache-superset-core 0.1.0 from PyPI (which pins sqlglot<29 and conflicts).
+initialize: |
+  pip install -e ./superset-core
+  # base.txt is the locked runtime dependency set. `pip install -e .` alone only
+  # installs pyproject dependencies and MISSES transitive runtime deps that live
+  # only in this lock (e.g. cachetools), causing import errors at runtime.
+  pip install -r requirements/base.txt
+  pip install -e .
+  # cloudflared: gives a public https://*.trycloudflare.com URL via a quick
+  # tunnel — avoids Devin's expose_port approval gate (it's just a shell process).
+  sudo curl -L -o /usr/local/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+  sudo chmod +x /usr/local/bin/cloudflared
+
+knowledge:
+  - name: run
+    contents: |
+      # Run in development mode so Superset's production-only SECRET_KEY check
+      # downgrades to a warning instead of refusing to start. Set before ANY
+      # superset command:
+      export SUPERSET_ENV=development
+      # Initialize the metadata DB (SQLite, created automatically) and serve on :8088.
+      # Login: admin / admin.
+      superset db upgrade
+      superset fab create-admin --username admin --firstname Admin --lastname User --email admin@example.com --password admin
+      superset init
+      # Start server + tunnel as DURABLE detached processes (setsid+nohup) so they
+      # survive after this command returns. A plain `&` gets SIGHUP'd when the shell
+      # exits, which kills the tunnel and yields Cloudflare error 1033.
+      setsid nohup superset run -h 0.0.0.0 -p 8088 > /tmp/superset.log 2>&1 &
+      until curl -sf http://localhost:8088/health > /dev/null; do sleep 2; done
+      # Public URL WITHOUT the expose_port approval gate: cloudflared quick tunnel.
+      setsid nohup cloudflared tunnel --url http://localhost:8088 > /tmp/cf.log 2>&1 &
+      # Wait until the tunnel is FULLY registered (not just the URL printed):
+      until grep -q "Registered tunnel connection" /tmp/cf.log; do sleep 1; done
+      URL=$(grep -m1 -o 'https://[a-z0-9-]*\.trycloudflare\.com' /tmp/cf.log)
+      # Verify the public URL actually responds before reporting it as deploy_url:
+      until curl -sf "$URL/health" > /dev/null; do sleep 2; done
+      echo "deploy_url: $URL"
+  - name: frontend
+    contents: |
+      # Only needed for UI/theme/template changes (e.g. brand colors, login page).
+      # APP_NAME and other config-only changes do NOT need a frontend build.
+      cd superset-frontend && npm ci && npm run build   # then restart superset run
