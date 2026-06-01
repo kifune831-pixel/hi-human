@@ -1,0 +1,7 @@
+node_modules/
+.env
+.DS_Store
+npm-debug.log*
+
+# runtime chat/requirement state (regenerated)
+data/*.json

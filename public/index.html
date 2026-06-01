@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>hi-human · Devin automation console</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <span class="wordmark">hi<b>·</b>human</span>
+      <span class="tagline">requirements in chat &rarr; Devin builds, deploys &amp; ships the PR</span>
+      <span class="mode" id="mode">…</span>
+    </header>
+
+    <main id="main"><!-- chat or dashboard injected here --></main>
+
+    <aside class="rail">
+      <div class="rail-label">Channels</div>
+      <div id="channelBlocks"></div>
+      <div class="rail-label" style="margin-top:18px">Insights</div>
+      <button class="block dash" data-view="dashboard">
+        <div class="icon">📊</div>
+        <div class="name">Dashboard</div>
+        <div class="desc">throughput · timing · PRs · scores</div>
+      </button>
+    </aside>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

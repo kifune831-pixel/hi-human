@@ -1,0 +1,11 @@
+services:
+  hi-human:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    # Persist the JSON store across restarts.
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
